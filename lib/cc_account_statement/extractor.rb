@@ -1,4 +1,6 @@
 # frozen_string_literal: true
+require "digest"
+require "bigdecimal"
 
 module CCAccountStatement
   class Extractor
@@ -49,7 +51,21 @@ module CCAccountStatement
       :reference_number,
       :amount,
       :section
-    )
+    ) do
+      def amount_to_cents(amount)
+        (BigDecimal(amount.to_s) * 100).to_i
+      end
+
+      def fingerprint
+        payload = [
+          transaction_date.to_s,
+          description[0, 21],
+          amount_to_cents(amount)
+        ].join("|")
+
+        Digest::MD5.hexdigest(payload)
+      end      
+    end
 
     KNOWN_SECTIONS = [
       "Payments and Other Credits",
